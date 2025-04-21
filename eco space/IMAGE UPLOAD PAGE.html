@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EcoScan - Upload & Recycle</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.12.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0"></script>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #f0fff4;
+      color: #1a202c;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    input[type="file"] {
+      margin: 1rem 0;
+    }
+
+    img {
+      max-width: 320px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      margin: 1rem 0;
+    }
+
+    button {
+      padding: 0.8rem 1.5rem;
+      background-color: #38a169;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      cursor: pointer;
+    }
+
+    #result {
+      margin-top: 1rem;
+      font-weight: bold;
+      color: #2c5282;
+    }
+
+    #guide {
+      margin-top: 1rem;
+      background: #e6fffa;
+      padding: 1rem;
+      border-radius: 12px;
+      max-width: 500px;
+      text-align: left;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    ul {
+      padding-left: 1.2rem;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <h1>EcoScan ♻️</h1>
+  <p>Upload an image of an item to get recycling guidance</p>
+
+  <input type="file" id="file-input" accept="image/*" />
+  <img id="preview" style="display:none;" />
+  <button id="detect-btn" disabled>🔍 Detect & Show Recycling Guide</button>
+  <div id="result">Upload an image to begin.</div>
+  <div id="guide"></div>
+
+  <script>
+    const fileInput = document.getElementById('file-input');
+    const preview = document.getElementById('preview');
+    const detectBtn = document.getElementById('detect-btn');
+    const result = document.getElementById('result');
+    const guide = document.getElementById('guide');
+
+    let model;
+    let imgLoaded = false;
+
+    const synonyms = {
+      "water bottle": "plastic bottle",
+      "bottle": "plastic bottle",
+      "juice bottle": "plastic bottle",
+      "beer bottle": "glass",
+      "soda can": "can",
+      "tin can": "can",
+      "cardboard box": "cardboard",
+      "notebook": "paper"
+    };
+
+    const recycleSteps = {
+      "plastic bottle": [
+        "Empty and rinse the bottle thoroughly.",
+        "Remove the label if possible (optional).",
+        "Crush the bottle to save space.",
+        "Leave the cap ON if your local recycling allows it.",
+        "Put in the plastic recycling bin."
+      ],
+      "paper": [
+        "Sort clean paper from dirty/food-stained ones.",
+        "Remove staples or plastic windows.",
+        "Don’t recycle oily/wet paper.",
+        "Place in the paper recycling bin."
+      ],
+      "can": [
+        "Rinse it to remove food or drink residue.",
+        "Crush to save space if possible.",
+        "Label can be left on.",
+        "Place in the metal recycling bin."
+      ],
+      "glass": [
+        "Rinse bottles/jars and remove lids.",
+        "Don't include broken glass.",
+        "Labels can stay on.",
+        "Recycle by color if required locally."
+      ],
+      "cardboard": [
+        "Flatten the boxes.",
+        "Remove excess tape or labels.",
+        "Avoid food-soiled parts.",
+        "Place in cardboard/paper recycling bin."
+      ],
+      "banana": [
+        "This is organic waste – not recyclable.",
+        "Compost it if possible.",
+        "Dispose in food waste/compost bin."
+      ],
+      "laptop": [
+        "Do not place in regular trash or recycling.",
+        "Back up and erase all data.",
+        "Take to an e-waste collection center or store drop-off.",
+        "Recycle batteries separately if needed."
+      ],
+      "bottlecap": [
+        "Check if local rules allow caps to be recycled.",
+        "If yes, leave it ON the bottle.",
+        "If no, throw caps in general waste.",
+        "Never recycle loose small caps—they jam machines."
+      ]
+    };
+
+    // Load MobileNet model
+    mobilenet.load().then(m => {
+      model = m;
+      result.textContent = "Model ready. Upload an image.";
+    });
+
+    // Handle file upload
+    fileInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        preview.src = event.target.result;
+        preview.style.display = "block";
+        imgLoaded = true;
+        detectBtn.disabled = false;
+        result.textContent = "";
+        guide.innerHTML = "";
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Detect and show guide
+    detectBtn.addEventListener('click', async () => {
+      if (!model || !imgLoaded) return;
+
+      result.textContent = "Scanning...";
+      guide.innerHTML = "";
+
+      const predictions = await model.classify(preview);
+      const top = predictions[0];
+      let label = top.className.toLowerCase();
+
+      // Check synonyms
+      if (synonyms[label]) {
+        label = synonyms[label];
+      }
+
+      const steps = recycleSteps[label];
+
+      result.innerHTML = `
+        <strong>Detected:</strong> ${top.className}<br>
+        <strong>Confidence:</strong> ${(top.probability * 100).toFixed(1)}%
+      `;
+
+      if (steps) {
+        guide.innerHTML = `<strong>♻️ How to Recycle:</strong><ul>${steps.map(step => `<li>${step}</li>`).join('')}</ul>`;
+      } else {
+        guide.innerHTML = "No detailed recycling instructions available for this item.";
+      }
+    });
+  </script>
+</body>
+</html>

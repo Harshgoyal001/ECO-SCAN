@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EcoScan - AI Detection</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.12.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #f0fff4;
+      color: #1a202c;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    video, canvas {
+      width: 320px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      margin: 1rem 0;
+    }
+
+    button {
+      padding: 1rem 2rem;
+      font-size: 1.1rem;
+      background-color: #38a169;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background-color: #a0aec0;
+      cursor: not-allowed;
+    }
+
+    #result {
+      margin-top: 1rem;
+      font-weight: bold;
+      color: #2c5282;
+    }
+
+    #loader {
+      margin-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .spinner {
+      border: 6px solid #e2e8f0;
+      border-top: 6px solid #38a169;
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    ul {
+      text-align: left;
+      padding-left: 1.2rem;
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>EcoScan Camera</h1>
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="canvas" style="display: none;"></canvas>
+
+  <div id="loader">
+    <div class="spinner"></div>
+    <div>Loading model...</div>
+  </div>
+
+  <button id="capture-btn" style="display: none;">📸 Capture & Scan</button>
+  <div id="result"></div>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const result = document.getElementById('result');
+    const ctx = canvas.getContext('2d');
+    const btn = document.getElementById('capture-btn');
+    const loader = document.getElementById('loader');
+
+    let model = null;
+
+    const tips = {
+      "water bottle": [
+        "Rinse the bottle thoroughly to remove any residue.",
+        "Crush it to save space in your recycling bin.",
+        "Leave the cap on if your local recycling accepts it.",
+        "Place the bottle in the plastic recycling bin."
+      ],
+      "plastic bottle": [
+        "Rinse the bottle thoroughly to remove any residue.",
+        "Crush it to save space in your recycling bin.",
+        "Leave the cap on if your local recycling accepts it.",
+        "Place the bottle in the plastic recycling bin."
+      ],
+      "paper": [
+        "Remove any staples, adhesives, or plastic windows.",
+        "Do not recycle greasy or wet paper.",
+        "Fold or flatten large sheets.",
+        "Place in the paper recycling bin."
+      ],
+      "cardboard": [
+        "Flatten boxes completely.",
+        "Remove tape and shipping labels.",
+        "Keep dry and clean.",
+        "Recycle with paper/cardboard waste."
+      ],
+      "can": [
+        "Rinse out any food or liquid.",
+        "Crush if allowed locally.",
+        "Leave label on — it’s okay.",
+        "Recycle in the metal bin."
+      ],
+      "glass": [
+        "Rinse the item thoroughly.",
+        "Remove any metal caps or lids.",
+        "Don’t recycle broken glass unless your local center allows.",
+        "Recycle in the glass bin or take to a return station."
+      ],
+      "banana": [
+        "This is organic waste — compost it.",
+        "Don’t throw it in general trash.",
+        "Keep food waste separate from plastics."
+      ],
+      "laptop": [
+        "Do NOT throw in regular trash.",
+        "Take it to a certified e-waste recycler.",
+        "Remove battery if possible (recycle that too)."
+      ],
+      "bottlecap": [
+        "If plastic, check if local recycling allows it on the bottle.",
+        "If metal, separate and put in metal bin.",
+        "Never throw small caps loose — they may get lost in sorting."
+      ]
+    };
+
+    async function setupCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+      } catch (err) {
+        result.textContent = "Camera access failed.";
+        console.error(err);
+      }
+    }
+
+    async function loadAndEnableModel() {
+      model = await mobilenet.load();
+      loader.style.display = "none";
+      btn.style.display = "inline-block";
+      result.textContent = "Model ready. You can scan now!";
+    }
+
+    async function detect() {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0);
+      result.textContent = "Scanning...";
+
+      const predictions = await model.classify(canvas);
+      const top = predictions[0];
+      const label = top.className.toLowerCase();
+
+      const match = Object.keys(tips).find(key => label.includes(key));
+      const tipList = match ? tips[match] : ["No specific recycling tip available. Try checking your local guidelines."];
+
+      result.innerHTML = `
+        <strong>Detected:</strong> ${top.className}<br>
+        <strong>Confidence:</strong> ${(top.probability * 100).toFixed(1)}%<br><br>
+        ♻️ <strong>Recycling Tips:</strong>
+        <ul>${tipList.map(t => `<li>${t}</li>`).join('')}</ul>
+      `;
+    }
+
+    btn.addEventListener('click', () => {
+      if (model) detect();
+    });
+
+    setupCamera();
+    loadAndEnableModel();
+  </script>
+</body>
+</html>

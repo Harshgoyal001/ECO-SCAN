@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EcoScan Login</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #a3f59c;
+      color: #1a202c;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+      padding: 1rem;
+    }
+
+    h1 {
+      font-size: 2em;
+      color: #2f855a;
+      margin-bottom: 1.5rem;
+    }
+
+    .login-container {
+      background-color: #037237;
+      padding: 2.5rem;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 380px;
+      box-sizing: border-box;
+    }
+
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 0.9rem 1rem;
+      margin: 0.75rem 0;
+      border: 1px solid #c6f6d5;
+      border-radius: 10px;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+
+    .button-primary {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1.2rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      background-color: #3182ce;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      margin-top: 1.2rem;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .button-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
+    }
+
+    .footer {
+      margin-top: 1.8rem;
+      color: #000000;
+      font-size: 0.95rem;
+    }
+
+    .link {
+      color: #2c5282;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <h1>Welcome Back to EcoScan</h1>
+  <div class="login-container">
+    <form action="ECOSPACE.html" method="post">
+      <input type="email" name="email" placeholder="Email Address" required />
+      <input type="password" name="password" placeholder="Password" required />
+      
+      <button type="submit" class="button-primary">Log In</button>
+    </form>
+    <p class="footer">
+      Don’t have an account?
+      <a href="ECOSPACE SIGN UP.html" class="link">Sign up</a>
+    </p>
+  </div>
+</body>
+</html>
